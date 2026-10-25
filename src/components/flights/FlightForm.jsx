@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import Modal from '../Modal'
 
-const RAPIDAPI_KEY = import.meta.env.VITE_RAPIDAPI_KEY
-
 const defaults = {
   airline: '', flightNumber: '', origin: '', destination: '',
   departureTime: '', arrivalTime: '', confirmationCode: '', notes: '',
@@ -42,14 +40,9 @@ export default function FlightForm({ onSave, onClose, initial }) {
     setLookupSuccess(false)
     try {
       const num = form.flightNumber.trim().replace(/\s+/g, '')
+      // Goes through our own /api function so the RapidAPI key stays server-side
       const res = await fetch(
-        `https://aerodatabox.p.rapidapi.com/flights/number/${encodeURIComponent(num)}/${lookupDate}`,
-        {
-          headers: {
-            'X-RapidAPI-Key': RAPIDAPI_KEY,
-            'X-RapidAPI-Host': 'aerodatabox.p.rapidapi.com',
-          },
-        }
+        `/api/flight-lookup?number=${encodeURIComponent(num)}&date=${encodeURIComponent(lookupDate)}`
       )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
