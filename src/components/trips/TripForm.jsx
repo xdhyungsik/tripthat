@@ -65,32 +65,32 @@ export default function TripForm({ onSave, onClose, initial }) {
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="label mb-0">Cities (in order)</label>
-            <button onClick={addCity} className="text-xs text-blue-600 hover:text-blue-800 font-semibold transition-colors">+ Add City</button>
+            <button onClick={addCity} className="text-xs text-accent hover:text-accent-soft font-semibold transition-colors">+ Add City</button>
           </div>
           <div className="space-y-2">
             {cities.map((city, i) => (
-              <div key={city.id} className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-2">
+              <div key={city.id} className="bg-raised border border-line rounded-lg p-3 space-y-2">
                 <div className="flex items-center gap-2">
                   <div className="flex flex-col gap-0.5">
-                    <button onClick={() => moveCity(city.id, -1)} disabled={i === 0} className="text-slate-300 hover:text-slate-600 disabled:opacity-30 transition-colors">
+                    <button onClick={() => moveCity(city.id, -1)} disabled={i === 0} className="text-ink-4 hover:text-ink-2 disabled:opacity-30 transition-colors">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" /></svg>
                     </button>
-                    <button onClick={() => moveCity(city.id, 1)} disabled={i === cities.length - 1} className="text-slate-300 hover:text-slate-600 disabled:opacity-30 transition-colors">
+                    <button onClick={() => moveCity(city.id, 1)} disabled={i === cities.length - 1} className="text-ink-4 hover:text-ink-2 disabled:opacity-30 transition-colors">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>
                     </button>
                   </div>
-                  <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold flex-shrink-0">{i + 1}</span>
+                  <span className="w-5 h-5 rounded-full bg-accent text-white text-xs flex items-center justify-center font-bold flex-shrink-0">{i + 1}</span>
                   <input className="input flex-1 min-w-0" placeholder="City name" value={city.name} onChange={e => updateCity(city.id, 'name', e.target.value)} />
                   <input className="input w-28 flex-shrink-0" placeholder="Country" value={city.country} onChange={e => updateCity(city.id, 'country', e.target.value)} />
                   {cities.length > 1 && (
-                    <button onClick={() => removeCity(city.id)} className="text-slate-300 hover:text-red-500 transition-colors flex-shrink-0">
+                    <button onClick={() => removeCity(city.id)} className="text-ink-4 hover:text-red-400 transition-colors flex-shrink-0">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                   )}
                 </div>
                 <div className="flex gap-2 pl-9">
                   <div className="flex-1">
-                    <label className="text-xs text-slate-500 mb-0.5 block">Arrival</label>
+                    <label className="text-xs text-ink-3 mb-0.5 block">Arrival</label>
                     <input
                       type="date"
                       className="input py-1.5 text-xs"
@@ -105,7 +105,7 @@ export default function TripForm({ onSave, onClose, initial }) {
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="text-xs text-slate-500 mb-0.5 block">Departure</label>
+                    <label className="text-xs text-ink-3 mb-0.5 block">Departure</label>
                     <input
                       type="date"
                       className="input py-1.5 text-xs"

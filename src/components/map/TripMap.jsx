@@ -1,6 +1,8 @@
 import { useEffect, useMemo } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import { useNow } from '../../hooks/useNow'
+import { flightPhase } from '../../utils/helpers'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -54,33 +56,47 @@ function shiftLng(pts, offset) {
   return pts.map(([lat, lng]) => [lat, lng + offset])
 }
 
+// On-screen heading between two points (Web Mercator), degrees clockwise from north
+function screenHeading(a, b) {
+  const mercY = lat => Math.log(Math.tan(Math.PI / 4 + toRad(lat) / 2))
+  return toDeg(Math.atan2(toRad(b[1] - a[1]), mercY(b[0]) - mercY(a[0])))
+}
+
+// Point and heading at fraction f along an arc
+function alongArc(arc, f) {
+  const i = Math.min(arc.length - 2, Math.max(0, Math.round(f * (arc.length - 1))))
+  return { pos: arc[i], heading: screenHeading(arc[i], arc[i + 1]) }
+}
+
+const PHASE_COLOR = { inair: '#34D399', upcoming: '#4F8CFF', landed: '#7A818D', unscheduled: '#4F8CFF' }
+
+const PLANE_SVG = '<path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>'
+
 function createCityIcon(label, active = false) {
+  const size = active ? 34 : 28
   return L.divIcon({
     html: `<div style="
-      background: ${active ? '#2563eb' : '#1e40af'};
-      border: 2.5px solid ${active ? '#93c5fd' : '#60a5fa'};
-      border-radius: 50%;
-      width: 30px; height: 30px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 700; color: white;
-      box-shadow: 0 2px 8px rgba(37,99,235,0.4);
-      font-family: Inter, system-ui, sans-serif;
+      width:${size}px;height:${size}px;border-radius:50%;
+      background:${active ? '#4F8CFF' : '#1D2027'};
+      border:2px solid ${active ? '#C7DAFF' : '#4F8CFF'};
+      display:flex;align-items:center;justify-content:center;
+      font:700 ${active ? 13 : 12}px -apple-system,Inter,system-ui,sans-serif;color:#fff;
+      box-shadow:0 0 0 ${active ? 6 : 4}px rgba(79,140,255,${active ? 0.25 : 0.15}),0 6px 16px rgba(0,0,0,0.5);
+      transition:all .2s;
     ">${label}</div>`,
     className: '',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-    popupAnchor: [0, -18],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2 - 4],
   })
 }
 
 function createPlaceIcon(color) {
   return L.divIcon({
     html: `<div style="
-      background: ${color};
-      border: 2px solid white;
-      border-radius: 50%;
-      width: 14px; height: 14px;
-      box-shadow: 0 1px 5px rgba(0,0,0,0.35);
+      width:14px;height:14px;border-radius:50%;
+      background:${color};border:2.5px solid #0B0C0F;
+      box-shadow:0 0 0 1px ${color}80,0 0 12px ${color}aa;
     "></div>`,
     className: '',
     iconSize: [14, 14],
@@ -89,32 +105,42 @@ function createPlaceIcon(color) {
   })
 }
 
-const CATEGORY_COLOR = {
-  Food: '#f97316',
-  Sightseeing: '#3b82f6',
-  Accommodation: '#8b5cf6',
-  'Night Market': '#ec4899',
-  Shopping: '#10b981',
-  Other: '#94a3b8',
-}
-
 function createAirportIcon(iata) {
   return L.divIcon({
     html: `<div style="
-      background: #0f766e;
-      border: 2px solid white;
-      border-radius: 4px;
-      padding: 2px 5px;
-      font-size: 10px; font-weight: 700; color: white;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
-      font-family: Inter, system-ui, sans-serif;
-      white-space: nowrap;
+      transform:translate(-50%,-50%);display:inline-block;
+      background:rgba(21,23,28,0.92);border:1px solid rgba(255,255,255,0.14);
+      border-radius:7px;padding:3px 7px;
+      font:700 11px 'SF Mono',ui-monospace,Menlo,monospace;letter-spacing:.06em;color:#F4F6FA;
+      box-shadow:0 4px 12px rgba(0,0,0,0.5);white-space:nowrap;
     ">${iata}</div>`,
     className: '',
-    iconSize: [null, 20],
-    iconAnchor: [20, 10],
-    popupAnchor: [0, -12],
+    iconSize: [0, 0],
+    iconAnchor: [0, 0],
+    popupAnchor: [0, -14],
   })
+}
+
+function createPlaneIcon(heading, color) {
+  return L.divIcon({
+    html: `<div style="
+      width:26px;height:26px;border-radius:50%;
+      background:${color};display:flex;align-items:center;justify-content:center;
+      box-shadow:0 0 0 4px ${color}33,0 0 18px ${color}99;
+    "><svg viewBox="0 0 24 24" width="15" height="15" fill="#0B0C0F" style="transform:rotate(${heading}deg)">${PLANE_SVG}</svg></div>`,
+    className: '',
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+  })
+}
+
+const CATEGORY_COLOR = {
+  Food: '#FB923C',
+  Sightseeing: '#38BDF8',
+  Accommodation: '#A78BFA',
+  'Night Market': '#F472B6',
+  Shopping: '#34D399',
+  Other: '#9CA3AF',
 }
 
 function FitBounds({ cities, flightCoords, placePts, hasActivePlaces }) {
@@ -127,11 +153,11 @@ function FitBounds({ cities, flightCoords, placePts, hasActivePlaces }) {
     ]
     if (!pts.length) return
     if (pts.length === 1) {
-      map.setView(pts[0], hasActivePlaces ? 13 : 11)
+      map.flyTo(pts[0], hasActivePlaces ? 13 : 11, { duration: 0.8 })
     } else {
       // For city+places view use tighter zoom; for full-trip overview cap lower
       const maxZoom = hasActivePlaces ? 14 : 6
-      map.fitBounds(L.latLngBounds(pts), { padding: [50, 50], maxZoom })
+      map.flyToBounds(L.latLngBounds(pts), { padding: [50, 50], maxZoom, duration: 0.8 })
     }
   }, [
     cities.map(c => `${c.lat},${c.lng}`).join(),
@@ -145,6 +171,7 @@ function FitBounds({ cities, flightCoords, placePts, hasActivePlaces }) {
 const MAX_BOUNDS = [[-85, -180], [85, 380]]
 
 export default function TripMap({ cities, places = [], flights = [], onCityClick, height = '100%', activeCityId }) {
+  const now = useNow(60000)
   const validCities = useMemo(() => cities.filter(c => c.lat && c.lng), [cities])
   const center = validCities.length > 0 ? [validCities[0].lat, validCities[0].lng] : [20, 0]
   const activeCityData = activeCityId ? validCities.find(c => c.id === activeCityId) : null
@@ -157,10 +184,7 @@ export default function TripMap({ cities, places = [], flights = [], onCityClick
     [places, activeCityId]
   )
 
-  const placePts = useMemo(() =>
-    activePlaces.map(p => [p.lat, p.lng]),
-    [activePlaces]
-  )
+  const placePts = useMemo(() => activePlaces.map(p => [p.lat, p.lng]), [activePlaces])
 
   // City-to-city route: connect consecutive city markers
   const cityArc = useMemo(() => {
@@ -177,6 +201,7 @@ export default function TripMap({ cities, places = [], flights = [], onCityClick
   const flightArcs = useMemo(() =>
     flights.filter(f => f.originCoords && f.destinationCoords).map(f => ({
       id: f.id,
+      flight: f,
       origin: f.origin,
       destination: f.destination,
       airline: f.airline,
@@ -184,32 +209,27 @@ export default function TripMap({ cities, places = [], flights = [], onCityClick
         [f.originCoords.lat, f.originCoords.lng],
         [f.destinationCoords.lat, f.destinationCoords.lng]
       ),
-      originCoords: f.originCoords,
-      destinationCoords: f.destinationCoords,
     }))
   , [flights])
 
-  // Natural airport coordinates for FitBounds (not shifted)
+  // Use the arc's own (continuous) endpoints so Pacific crossings fit as one span
   const flightCoords = useMemo(() =>
-    flights.flatMap(f => {
-      const pts = []
-      if (f.originCoords) pts.push([f.originCoords.lat, f.originCoords.lng])
-      if (f.destinationCoords) pts.push([f.destinationCoords.lat, f.destinationCoords.lng])
-      return pts
-    })
-  , [flights])
+    flightArcs.flatMap(f => [f.arc[0], f.arc[f.arc.length - 1]])
+  , [flightArcs])
 
   return (
     <MapContainer
       center={center}
       zoom={validCities.length > 0 ? 6 : 2}
       style={{ height, width: '100%' }}
+      className="tiles-dark"
       zoomControl={true}
-      minZoom={3}
+      minZoom={2}
       maxBounds={MAX_BOUNDS}
       maxBoundsViscosity={1}
+      worldCopyJump={false}
     >
-      {/* OSM standard tiles: free, no key — CARTO basemaps started requiring an API key */}
+      {/* OSM standard tiles, recolored dark in CSS (.tiles-dark) — free, no key */}
       <TileLayer
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -221,41 +241,49 @@ export default function TripMap({ cities, places = [], flights = [], onCityClick
         <Polyline
           key={`city-${offset}`}
           positions={shiftLng(cityArc, offset)}
-          pathOptions={{ color: '#2563eb', weight: 2, dashArray: '6 5', opacity: 0.5 }}
+          pathOptions={{ color: '#8DB4FF', weight: 2, opacity: 0.45, className: 'route-arc' }}
         />
       ))}
 
-      {/* Flight great-circle arcs — two world copies */}
-      {flightArcs.map(f =>
-        [0, 360].map(offset => (
+      {/* Flight arcs: soft glow underneath, animated dashes on top */}
+      {flightArcs.flatMap(f => {
+        const phase = flightPhase(f.flight, now)
+        const color = PHASE_COLOR[phase.phase]
+        const plane = alongArc(f.arc, phase.phase === 'inair' ? phase.progress : phase.phase === 'landed' ? 1 : 0.5)
+        return [0, 360].flatMap(offset => [
           <Polyline
-            key={`${f.id}-${offset}`}
+            key={`${f.id}-glow-${offset}`}
             positions={shiftLng(f.arc, offset)}
-            pathOptions={{ color: '#0d9488', weight: 2.5, dashArray: '8 5', opacity: 0.85 }}
+            pathOptions={{ color, weight: 7, opacity: phase.phase === 'landed' ? 0.06 : 0.16, lineCap: 'round' }}
+          />,
+          <Polyline
+            key={`${f.id}-line-${offset}`}
+            positions={shiftLng(f.arc, offset)}
+            pathOptions={{ color, weight: 2.5, opacity: phase.phase === 'landed' ? 0.5 : 0.95, className: phase.phase === 'landed' ? '' : 'flight-arc' }}
           >
-            {offset === 360 && (
-              <Popup>
-                <div className="py-1 min-w-[120px]">
-                  <div className="font-semibold text-slate-900 text-sm">{f.origin} → {f.destination}</div>
-                  {f.airline && <div className="text-xs text-slate-500 mt-0.5">{f.airline}</div>}
-                </div>
-              </Popup>
-            )}
-          </Polyline>
-        ))
-      )}
+            <Popup>
+              <div className="py-0.5 min-w-[140px]">
+                <div className="font-bold text-sm tracking-wide">{f.origin} → {f.destination}</div>
+                {f.airline && <div className="text-xs opacity-60 mt-0.5">{f.airline}{f.flight.flightNumber ? ` · ${f.flight.flightNumber}` : ''}</div>}
+              </div>
+            </Popup>
+          </Polyline>,
+          phase.phase !== 'landed' && (
+            <Marker
+              key={`${f.id}-plane-${offset}`}
+              position={[plane.pos[0], plane.pos[1] + offset]}
+              icon={createPlaneIcon(plane.heading, color)}
+              interactive={false}
+            />
+          ),
+        ])
+      })}
 
-      {/* Airport markers at natural coords */}
-      {flightArcs.map(f => (
-        <>
-          <Marker key={`${f.id}-orig`} position={[f.originCoords.lat, f.originCoords.lng]} icon={createAirportIcon(f.origin)}>
-            <Popup><div className="text-sm font-semibold">{f.origin}</div></Popup>
-          </Marker>
-          <Marker key={`${f.id}-dest`} position={[f.destinationCoords.lat, f.destinationCoords.lng]} icon={createAirportIcon(f.destination)}>
-            <Popup><div className="text-sm font-semibold">{f.destination}</div></Popup>
-          </Marker>
-        </>
-      ))}
+      {/* Airport labels at the arc ends */}
+      {flightArcs.flatMap(f => [
+        <Marker key={`${f.id}-orig`} position={f.arc[0]} icon={createAirportIcon(f.origin)} interactive={false} />,
+        <Marker key={`${f.id}-dest`} position={f.arc[f.arc.length - 1]} icon={createAirportIcon(f.destination)} interactive={false} />,
+      ])}
 
       {/* Place markers for active city */}
       {activePlaces.map(place => (
@@ -265,12 +293,12 @@ export default function TripMap({ cities, places = [], flights = [], onCityClick
           icon={createPlaceIcon(CATEGORY_COLOR[place.category] || CATEGORY_COLOR.Other)}
         >
           <Popup>
-            <div className="py-1 min-w-[130px]">
-              <div className="font-semibold text-slate-900 text-sm">{place.name}</div>
-              {place.category && <div className="text-xs text-slate-500 mt-0.5">{place.category}</div>}
-              {place.notes && <div className="text-xs text-slate-400 mt-1">{place.notes}</div>}
+            <div className="py-0.5 min-w-[140px]">
+              <div className="font-semibold text-sm">{place.name}</div>
+              {place.category && <div className="text-xs mt-0.5" style={{ color: CATEGORY_COLOR[place.category] }}>{place.category}</div>}
+              {place.notes && <div className="text-xs opacity-60 mt-1">{place.notes}</div>}
               {place.link && (
-                <a href={place.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline mt-1 block">
+                <a href={place.link} target="_blank" rel="noopener noreferrer" className="text-xs mt-1.5 block" style={{ color: '#8DB4FF' }}>
                   Open in Maps ↗
                 </a>
               )}
@@ -286,18 +314,14 @@ export default function TripMap({ cities, places = [], flights = [], onCityClick
           position={[city.lat, city.lng]}
           icon={createCityIcon(i + 1, city.id === activeCityId)}
           eventHandlers={{ click: () => onCityClick && onCityClick(city.id) }}
+          zIndexOffset={city.id === activeCityId ? 1000 : 500}
         >
           <Popup>
-            <div className="py-1 min-w-[120px]">
-              <div className="font-semibold text-slate-900 text-sm">{city.name}</div>
-              {city.country && <div className="text-xs text-slate-500 mt-0.5">{city.country}</div>}
-              {city.startDate && (
-                <div className="text-xs text-slate-400 mt-1">
-                  {city.startDate}{city.endDate && city.startDate !== city.endDate ? ` — ${city.endDate}` : ''}
-                </div>
-              )}
+            <div className="py-0.5 min-w-[130px]">
+              <div className="font-semibold text-sm">{city.name}</div>
+              {city.country && <div className="text-xs opacity-60 mt-0.5">{city.country}</div>}
               {places.filter(p => p.cityId === city.id).length > 0 && (
-                <div className="text-xs text-blue-600 mt-1">
+                <div className="text-xs mt-1" style={{ color: '#8DB4FF' }}>
                   {places.filter(p => p.cityId === city.id).length} saved places
                 </div>
               )}

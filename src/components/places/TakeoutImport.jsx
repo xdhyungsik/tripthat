@@ -152,9 +152,9 @@ export default function TakeoutImport({ onImport, onClose, cities, existingPlace
     <Modal title="Import from Google Maps" onClose={onClose} wide>
       {step === 'upload' ? (
         <div className="space-y-4">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-ink-2">
             Drop your city CSV files all at once — each file will be auto-matched to the right city.
-            Or drop a <span className="font-mono text-xs bg-slate-100 px-1 rounded">Saved Places.json</span> from Google Takeout.
+            Or drop a <span className="font-mono text-xs bg-raised px-1 rounded">Saved Places.json</span> from Google Takeout.
           </p>
 
           <div
@@ -163,14 +163,14 @@ export default function TakeoutImport({ onImport, onClose, cities, existingPlace
             onDrop={handleDrop}
             onClick={() => fileRef.current?.click()}
             className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition-colors ${
-              dragging ? 'border-blue-400 bg-blue-50' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
+              dragging ? 'border-accent bg-accent/10' : 'border-line hover:border-accent/50 hover:bg-raised'
             }`}
           >
-            <svg className="w-10 h-10 text-slate-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-10 h-10 text-ink-4 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-            <p className="text-sm font-semibold text-slate-600">Drop all your city files here</p>
-            <p className="text-xs text-slate-400 mt-1">Supports multiple .csv files or a single Saved Places.json — click to browse</p>
+            <p className="text-sm font-semibold text-ink-2">Drop all your city files here</p>
+            <p className="text-xs text-ink-3 mt-1">Supports multiple .csv files or a single Saved Places.json — click to browse</p>
             <input
               ref={fileRef}
               type="file"
@@ -181,23 +181,23 @@ export default function TakeoutImport({ onImport, onClose, cities, existingPlace
             />
           </div>
 
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-400">{error}</p>}
         </div>
       ) : (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-800">
+              <p className="text-sm font-semibold text-ink">
                 {fileGroups.length} file{fileGroups.length !== 1 ? 's' : ''} loaded
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-ink-3 mt-0.5">
                 {totalSelected} places to import
                 {totalDupes > 0 && <span className="text-amber-500"> · {totalDupes} already saved</span>}
               </p>
             </div>
             <button
               onClick={() => { setStep('upload'); setFileGroups([]) }}
-              className="text-xs text-slate-400 hover:text-slate-600"
+              className="text-xs text-ink-3 hover:text-ink-2"
             >
               ← Load different files
             </button>
@@ -212,7 +212,7 @@ export default function TakeoutImport({ onImport, onClose, cities, existingPlace
                 <div
                   key={i}
                   className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-                    g.enabled ? 'bg-white border-slate-200' : 'bg-slate-50 border-slate-100 opacity-50'
+                    g.enabled ? 'bg-surface border-line' : 'bg-raised border-line opacity-50'
                   }`}
                 >
                   <input
@@ -225,18 +225,18 @@ export default function TakeoutImport({ onImport, onClose, cities, existingPlace
                   {/* Filename + count */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <svg className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-3.5 h-3.5 text-ink-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      <span className="text-sm font-medium text-slate-700 truncate">{g.filename}</span>
+                      <span className="text-sm font-medium text-ink-2 truncate">{g.filename}</span>
                     </div>
-                    <div className="text-xs text-slate-400 mt-0.5 ml-5">
+                    <div className="text-xs text-ink-3 mt-0.5 ml-5">
                       {g.places.length} places
                       {dupes > 0 && <span className="text-amber-500"> · {dupes} already saved</span>}
                     </div>
                   </div>
 
-                  <svg className="w-4 h-4 text-slate-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-ink-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
 

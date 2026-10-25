@@ -71,12 +71,14 @@ export function useTripSync(tripId, state, dispatch) {
     const snapshot = buildSnapshot(tripId, state)
     const str = JSON.stringify(snapshot)
     try {
-      await supabase.from('shared_trips').insert({
+      // supabase-js reports failures in `error` instead of throwing
+      const { error } = await supabase.from('shared_trips').insert({
         share_code: code,
         trip_data:  snapshot,
         updated_by: clientId,
         updated_at: new Date().toISOString(),
       })
+      if (error) throw error
       lastPushedRef.current = str
       dispatch({ type: 'UPDATE_TRIP', id: tripId, payload: { shareCode: code } })
       return code

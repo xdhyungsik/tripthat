@@ -25,36 +25,115 @@ export function getDatesInRange(startDate, endDate) {
 
 export function categoryColor(category) {
   const map = {
-    Food: 'bg-orange-50 text-orange-700 border-orange-200',
-    Sightseeing: 'bg-blue-50 text-blue-700 border-blue-200',
-    Accommodation: 'bg-violet-50 text-violet-700 border-violet-200',
-    'Night Market': 'bg-pink-50 text-pink-700 border-pink-200',
-    Shopping: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    Other: 'bg-slate-100 text-slate-600 border-slate-200',
+    Food: 'bg-orange-500/10 text-orange-300 border-orange-500/20',
+    Sightseeing: 'bg-sky-500/10 text-sky-300 border-sky-500/20',
+    Accommodation: 'bg-violet-500/10 text-violet-300 border-violet-500/20',
+    'Night Market': 'bg-pink-500/10 text-pink-300 border-pink-500/20',
+    Shopping: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+    Other: 'bg-white/5 text-ink-2 border-white/10',
   }
   return map[category] || map.Other
 }
 
 export function categoryDotColor(category) {
   const map = {
-    Food: '#f97316',
-    Sightseeing: '#3b82f6',
-    Accommodation: '#8b5cf6',
-    'Night Market': '#ec4899',
-    Shopping: '#10b981',
-    Other: '#94a3b8',
+    Food: '#FB923C',
+    Sightseeing: '#38BDF8',
+    Accommodation: '#A78BFA',
+    'Night Market': '#F472B6',
+    Shopping: '#34D399',
+    Other: '#9CA3AF',
   }
   return map[category] || map.Other
 }
 
 export function statusColor(status) {
   const map = {
-    'Want to Go': 'bg-amber-50 text-amber-700 border-amber-200',
-    Confirmed: 'bg-green-50 text-green-700 border-green-200',
-    Done: 'bg-slate-100 text-slate-500 border-slate-200',
-    Skipped: 'bg-red-50 text-red-500 border-red-200',
+    'Want to Go': 'bg-amber-500/10 text-amber-300 border-amber-500/20',
+    Confirmed: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+    Done: 'bg-white/5 text-ink-3 border-white/10',
+    Skipped: 'bg-red-500/10 text-red-300 border-red-500/20',
   }
   return map[status] || map['Want to Go']
+}
+
+// ── Time helpers for flight countdowns and trip status ─────────────────────
+
+// Best-effort absolute time for a flight endpoint: prefer stored UTC, else treat local as browser-local
+export function flightInstant(flight, which) {
+  const utc = flight[`${which}TimeUTC`]
+  const local = flight[`${which}Time`]
+  if (utc) return new Date(utc)
+  if (local) return new Date(local)
+  return null
+}
+
+export function formatDuration(mins) {
+  if (mins == null || mins < 0) return ''
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  return h ? `${h}h ${String(m).padStart(2, '0')}m` : `${m}m`
+}
+
+// "in 3d 4h", "in 2h 15m", "in 12m"
+export function formatCountdown(ms) {
+  const mins = Math.max(0, Math.round(ms / 60000))
+  const d = Math.floor(mins / 1440)
+  const h = Math.floor((mins % 1440) / 60)
+  const m = mins % 60
+  if (d > 0) return `${d}d ${h}h`
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
+
+export function flightPhase(flight, now = new Date()) {
+  const dep = flightInstant(flight, 'departure')
+  const arr = flightInstant(flight, 'arrival')
+  if (!dep) return { phase: 'unscheduled', progress: 0 }
+  if (now < dep) return { phase: 'upcoming', progress: 0, msUntil: dep - now }
+  if (arr && now < arr) return { phase: 'inair', progress: (now - dep) / (arr - dep), msLeft: arr - now }
+  return { phase: 'landed', progress: 1 }
+}
+
+export function daysUntil(dateStr, now = new Date()) {
+  if (!dateStr) return null
+  const start = new Date(dateStr + 'T00:00:00')
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.round((start - today) / 86400000)
+}
+
+export function tripPhase(trip, now = new Date()) {
+  const toStart = daysUntil(trip.startDate, now)
+  const toEnd = daysUntil(trip.endDate || trip.startDate, now)
+  if (toStart == null) return { phase: 'draft', label: 'No dates yet' }
+  if (toStart > 0) return { phase: 'upcoming', label: toStart === 1 ? 'Tomorrow' : `In ${toStart} days`, days: toStart }
+  if (toEnd >= 0) return { phase: 'now', label: 'Happening now' }
+  return { phase: 'past', label: 'Completed' }
+}
+
+export function tripNights(trip) {
+  if (!trip.startDate || !trip.endDate) return null
+  return Math.max(0, Math.round((new Date(trip.endDate) - new Date(trip.startDate)) / 86400000))
+}
+
+// Short date like "Dec 20"
+export function formatShortDate(iso) {
+  if (!iso) return ''
+  return new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+export function formatDateRange(start, end) {
+  if (!start) return ''
+  if (!end || end === start) return formatShortDate(start)
+  const s = new Date(start + 'T12:00:00')
+  const e = new Date(end + 'T12:00:00')
+  const sameYear = s.getFullYear() === e.getFullYear()
+  const sameMonth = sameYear && s.getMonth() === e.getMonth()
+  const sStr = s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const eStr = sameMonth
+    ? e.toLocaleDateString('en-US', { day: 'numeric' })
+    : e.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return `${sStr} – ${eStr}, ${e.getFullYear()}`
 }
 
 export function openInMaps(place, cityName) {

@@ -21,7 +21,7 @@ function AddBlockForm({ dayId, places, onAdd, onCancel }) {
   }
 
   return (
-    <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+    <div className="mt-3 p-3 bg-raised border border-line rounded-xl space-y-3">
       <div className="flex items-center gap-2">
         <input
           type="time"
@@ -34,7 +34,7 @@ function AddBlockForm({ dayId, places, onAdd, onCancel }) {
             <button
               key={m}
               onClick={() => setMode(m)}
-              className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${mode === m ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-700 bg-white border border-slate-200'}`}
+              className={`text-xs px-2.5 py-1 rounded-lg transition-colors ${mode === m ? 'bg-accent text-white' : 'text-ink-3 hover:text-ink-2 bg-surface border border-line'}`}
             >
               {m === 'place' ? 'Saved place' : 'Custom'}
             </button>
@@ -74,9 +74,9 @@ function EditBlockForm({ block, onSave, onCancel }) {
   const [notes, setNotes] = useState(block.notes || '')
 
   return (
-    <div className="mt-1 p-2.5 bg-blue-50 border border-blue-200 rounded-lg space-y-2">
+    <div className="mt-1 p-2.5 bg-accent/10 border border-accent/30 rounded-lg space-y-2">
       <div className="flex items-center gap-2">
-        <label className="text-xs text-slate-500 flex-shrink-0">Time</label>
+        <label className="text-xs text-ink-3 flex-shrink-0">Time</label>
         <input
           type="time"
           className="input py-1 text-xs flex-1"
@@ -108,14 +108,14 @@ function BlockItem({ block, places, onDelete, onUpdate }) {
       <div className="flex items-start gap-0">
         {/* Time */}
         <div className="w-20 text-right pr-3 pt-0.5 flex-shrink-0">
-          <span className="text-xs font-medium text-slate-400 tabular-nums">
+          <span className="text-xs font-medium text-ink-3 tabular-nums">
             {block.time ? formatTimeDisplay(block.time) : '--:--'}
           </span>
         </div>
         {/* Dot */}
         <div className="flex flex-col items-center flex-shrink-0 pt-1">
           <div
-            className="w-3 h-3 rounded-full ring-2 ring-white flex-shrink-0"
+            className="w-3 h-3 rounded-full ring-2 ring-surface flex-shrink-0"
             style={{ background: dotColor }}
           />
         </div>
@@ -123,20 +123,20 @@ function BlockItem({ block, places, onDelete, onUpdate }) {
         <div className="flex-1 min-w-0 pl-3 pb-4">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-slate-800 leading-tight">
+              <div className="text-sm font-semibold text-ink leading-tight">
                 {place ? place.name : block.customActivity || 'Activity'}
               </div>
               {place && (
-                <div className="text-xs text-slate-400 mt-0.5">{place.category}</div>
+                <div className="text-xs text-ink-3 mt-0.5">{place.category}</div>
               )}
               {block.notes && (
-                <div className="text-xs text-slate-400 mt-0.5">{block.notes}</div>
+                <div className="text-xs text-ink-3 mt-0.5">{block.notes}</div>
               )}
             </div>
             <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 mt-0.5">
               <button
                 onClick={() => setEditing(e => !e)}
-                className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                className="p-1 text-ink-3 hover:text-accent hover:bg-accent/10 rounded transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -144,7 +144,7 @@ function BlockItem({ block, places, onDelete, onUpdate }) {
               </button>
               <button
                 onClick={() => onDelete(block.id)}
-                className="p-1 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                className="p-1 text-ink-4 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -176,8 +176,8 @@ function DayCard({ day, places, onAddBlock, onDeleteBlock, onUpdateBlock }) {
     <div className="card p-4">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <div className="font-semibold text-slate-900 text-sm">{formatDate(day.date)}</div>
-          <div className="text-xs text-slate-400 mt-0.5">
+          <div className="font-semibold text-ink text-sm">{formatDate(day.date)}</div>
+          <div className="text-xs text-ink-3 mt-0.5">
             {sortedBlocks.length} {sortedBlocks.length === 1 ? 'activity' : 'activities'}
           </div>
         </div>
@@ -196,7 +196,7 @@ function DayCard({ day, places, onAddBlock, onDeleteBlock, onUpdateBlock }) {
       <div className="relative">
         {/* Vertical line */}
         {sortedBlocks.length > 0 && (
-          <div className="absolute top-2 bottom-0 bg-slate-100" style={{ left: '5.25rem', width: '1px' }} />
+          <div className="absolute top-2 bottom-0 bg-raised" style={{ left: '5.25rem', width: '1px' }} />
         )}
         {sortedBlocks.map(block => (
           <BlockItem
@@ -209,7 +209,7 @@ function DayCard({ day, places, onAddBlock, onDeleteBlock, onUpdateBlock }) {
         ))}
 
         {sortedBlocks.length === 0 && !adding && (
-          <div className="text-center py-6 text-xs text-slate-300">No activities yet</div>
+          <div className="text-center py-6 text-xs text-ink-4">No activities yet</div>
         )}
       </div>
 
@@ -223,7 +223,7 @@ function DayCard({ day, places, onAddBlock, onDeleteBlock, onUpdateBlock }) {
       ) : (
         <button
           onClick={() => setAdding(true)}
-          className="mt-1 text-xs text-slate-400 hover:text-blue-600 flex items-center gap-1.5 transition-colors w-full justify-center py-1.5 border border-dashed border-slate-200 hover:border-blue-300 rounded-lg"
+          className="mt-1 text-xs text-ink-3 hover:text-accent flex items-center gap-1.5 transition-colors w-full justify-center py-1.5 border border-dashed border-line hover:border-accent/50 rounded-lg"
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -252,9 +252,9 @@ export default function ItineraryBuilder({ tripId, cityId, city }) {
 
   if (!city.startDate || !city.endDate) {
     return (
-      <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-xl">
-        <p className="text-sm text-slate-400">Set arrival and departure dates for {city.name} to build a day-by-day itinerary.</p>
-        <p className="text-xs text-slate-300 mt-1">Edit the trip to add city dates.</p>
+      <div className="text-center py-10 border-2 border-dashed border-line rounded-xl">
+        <p className="text-sm text-ink-3">Set arrival and departure dates for {city.name} to build a day-by-day itinerary.</p>
+        <p className="text-xs text-ink-4 mt-1">Edit the trip to add city dates.</p>
       </div>
     )
   }
@@ -267,24 +267,24 @@ export default function ItineraryBuilder({ tripId, cityId, city }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-slate-700 text-sm">
+        <h3 className="font-semibold text-ink-2 text-sm">
           Day-by-Day Itinerary
-          <span className="ml-2 text-slate-400 font-normal">{cityDays.length} days</span>
+          <span className="ml-2 text-ink-3 font-normal">{cityDays.length} days</span>
         </h3>
       </div>
       <div className="space-y-3">
         {allDays.map(day => day.isPending ? (
           <div
             key={day.date}
-            className="card p-4 cursor-pointer hover:border-blue-300 hover:shadow-md transition-all"
+            className="card p-4 cursor-pointer hover:border-accent/50 hover:shadow-md transition-all"
             onClick={() => dispatch({ type: 'UPSERT_DAY', payload: { tripId, cityId, date: day.date } })}
           >
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-semibold text-slate-800 text-sm">{formatDate(day.date)}</div>
-                <div className="text-xs text-slate-400 mt-0.5">Click to plan this day</div>
+                <div className="font-semibold text-ink text-sm">{formatDate(day.date)}</div>
+                <div className="text-xs text-ink-3 mt-0.5">Click to plan this day</div>
               </div>
-              <svg className="w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-ink-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </div>

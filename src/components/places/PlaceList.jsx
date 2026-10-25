@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import PlaceCard from './PlaceCard'
 import PlaceForm from './PlaceForm'
-import { CATEGORIES, STATUSES } from '../../utils/helpers'
+import { Plus, MapPin } from '../icons'
+import { CATEGORIES, STATUSES, categoryDotColor } from '../../utils/helpers'
 
 export default function PlaceList({ tripId, cityId, cityName }) {
   const { state, dispatch } = useApp()
@@ -36,53 +37,79 @@ export default function PlaceList({ tripId, cityId, cityName }) {
     return g
   }, [filtered])
 
+  const countFor = cat => places.filter(p => p.category === cat).length
+  const usedCats = CATEGORIES.filter(c => countFor(c) > 0)
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3 gap-2">
-        <span className="text-sm font-semibold text-slate-700">
-          {places.length} place{places.length !== 1 ? 's' : ''}
-        </span>
-        <button onClick={() => setShowForm(true)} className="btn-primary text-xs py-1.5 px-3">
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Place
+        <h3 className="text-lg font-bold text-ink tracking-tight font-display">
+          {cityName} <span className="text-ink-4 font-semibold">{places.length}</span>
+        </h3>
+        <button onClick={() => setShowForm(true)} className="btn-primary py-2 px-3.5">
+          <Plus className="w-4 h-4" strokeWidth={2.6} />
+          Add
         </button>
       </div>
 
       {places.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          <input
-            className="input max-w-[140px] py-1.5 text-xs"
-            placeholder="Search..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-          <select className="input w-auto py-1.5 text-xs" value={filterCat} onChange={e => setFilterCat(e.target.value)}>
-            <option value="All">All Categories</option>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select className="input w-auto py-1.5 text-xs" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-            <option value="All">All Statuses</option>
-            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+        <div className="space-y-2.5 mb-4">
+          <div className="flex gap-2">
+            <input
+              className="input py-2"
+              placeholder={`Search ${cityName}…`}
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <select className="input w-auto py-2 text-xs" value={filterStatus} onChange={e => setFilterStatus(e.target.value)} aria-label="Filter by status">
+              <option value="All">Any status</option>
+              {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          {usedCats.length > 1 && (
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+              {['All', ...usedCats].map(cat => {
+                const on = filterCat === cat
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setFilterCat(cat)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border transition-colors ${on ? 'bg-white text-bg border-white' : 'bg-surface text-ink-2 border-white/[0.08] hover:border-white/20'}`}
+                  >
+                    {cat !== 'All' && <span className="w-2 h-2 rounded-full" style={{ background: categoryDotColor(cat) }} />}
+                    {cat}
+                    <span className={on ? 'text-bg/50' : 'text-ink-4'}>{cat === 'All' ? places.length : countFor(cat)}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
       {filtered.length === 0 ? (
-        <div className="text-center py-10 border-2 border-dashed border-slate-200 rounded-xl">
-          <p className="text-sm text-slate-400 mb-3">
-            {places.length === 0 ? `No places saved for ${cityName} yet` : 'No places match your filters'}
-          </p>
-          {places.length === 0 && (
-            <button onClick={() => setShowForm(true)} className="btn-secondary text-xs">Add your first place</button>
-          )}
-        </div>
+        places.length === 0 ? (
+          <button
+            onClick={() => setShowForm(true)}
+            className="w-full text-center py-12 rounded-3xl border border-dashed border-white/10 hover:border-accent/40 hover:bg-accent/[0.04] transition-colors group"
+          >
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <MapPin className="w-6 h-6" />
+            </div>
+            <p className="text-sm font-semibold text-ink">Save your first spot in {cityName}</p>
+            <p className="text-xs text-ink-3 mt-1">Restaurants, sights, markets — paste a Google Maps link to autofill</p>
+          </button>
+        ) : (
+          <p className="text-sm text-ink-3 text-center py-10">No places match your filters</p>
+        )
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {catOrder.filter(c => grouped[c]).map(cat => (
             <div key={cat}>
-              <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{cat}</h4>
+              <h4 className="eyebrow mb-2 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: categoryDotColor(cat) }} />
+                {cat}
+              </h4>
               <div className="space-y-2">
                 {grouped[cat].map(place => (
                   <PlaceCard

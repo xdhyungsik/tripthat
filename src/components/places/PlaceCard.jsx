@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { categoryColor, categoryDotColor, statusColor, openInMaps, searchReviews } from '../../utils/helpers'
+import { motion } from 'framer-motion'
+import { categoryDotColor, statusColor, openInMaps, searchReviews, STATUSES } from '../../utils/helpers'
+import { MapPin, Pencil, Trash, Sparkle, Globe } from '../icons'
 import PlaceForm from './PlaceForm'
 
 export default function PlaceCard({ place, cityName, onUpdate, onDelete }) {
@@ -11,114 +13,93 @@ export default function PlaceCard({ place, cityName, onUpdate, onDelete }) {
     setEditing(false)
   }
 
-  const dotColor = categoryDotColor(place.category)
-  const catClass = categoryColor(place.category)
+  const color = categoryDotColor(place.category)
   const statClass = statusColor(place.status)
   const isDone = place.status === 'Done'
   const isSkipped = place.status === 'Skipped'
+  const isFood = place.category === 'Food'
 
   return (
     <>
-      <div className={`group border border-slate-200 rounded-xl bg-white hover:shadow-md transition-all ${isDone || isSkipped ? 'opacity-55' : ''}`}>
-        <div className="p-3.5">
-          <div className="flex items-start gap-3">
-            {/* Category dot */}
-            <div className="mt-1 flex-shrink-0">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: dotColor }} />
-            </div>
+      <motion.div
+        layout
+        className={`group relative overflow-hidden rounded-2xl bg-surface border border-white/[0.06] shadow-card hover:border-white/[0.12] transition-colors ${isDone || isSkipped ? 'opacity-55' : ''}`}
+      >
+        {/* category color edge */}
+        <div className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: color }} />
 
+        <div className="pl-4 pr-3 py-3.5">
+          <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-start gap-2 mb-1">
-                <h4 className={`font-semibold text-sm leading-snug ${isDone ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+              <div className="flex items-center gap-2">
+                <h4 className={`font-semibold text-[15px] leading-snug truncate ${isDone ? 'line-through text-ink-3' : 'text-ink'}`}>
                   {place.name}
                 </h4>
                 {place.isBackup && (
-                  <span className="badge bg-slate-100 text-slate-500 text-[10px] flex-shrink-0 mt-0.5">backup</span>
+                  <span className="badge bg-white/5 text-ink-3 border-white/10 text-[10px] flex-shrink-0">Backup</span>
                 )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-1 mb-1.5">
-                <span className={`badge border text-[11px] ${catClass}`}>{place.category}</span>
-                <span className={`badge border text-[11px] ${statClass}`}>{place.status}</span>
-                {place.category === 'Food' && place.priceRange && (
-                  <span className="badge bg-slate-100 text-slate-500 text-[11px]">{place.priceRange}</span>
-                )}
-                {place.category === 'Food' && place.cuisine && (
-                  <span className="badge bg-slate-100 text-slate-500 text-[11px]">{place.cuisine}</span>
-                )}
-              </div>
+              {(isFood && (place.cuisine || place.priceRange)) && (
+                <p className="text-xs text-ink-3 mt-0.5">
+                  {[place.cuisine, place.priceRange].filter(Boolean).join(' · ')}
+                </p>
+              )}
 
               {place.address && (
-                <p className="text-[11px] text-slate-400 flex items-center gap-1 mb-1">
-                  <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  {place.address}
+                <p className="text-xs text-ink-3 flex items-center gap-1 mt-1.5 truncate">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{place.address}</span>
                 </p>
               )}
 
               {place.notes && (
-                <p className={`text-xs text-slate-500 leading-relaxed ${!expanded && place.notes.length > 90 ? 'line-clamp-2' : ''}`}>
+                <p
+                  onClick={() => place.notes.length > 90 && setExpanded(e => !e)}
+                  className={`text-[13px] text-ink-2 leading-relaxed mt-2 ${!expanded && place.notes.length > 90 ? 'line-clamp-2 cursor-pointer' : ''}`}
+                >
                   {place.notes}
                 </p>
               )}
-              {place.notes && place.notes.length > 90 && (
-                <button onClick={() => setExpanded(e => !e)} className="text-[11px] text-blue-500 hover:text-blue-700">
-                  {expanded ? 'Less' : 'More'}
-                </button>
-              )}
-              {place.category === 'Food' && place.mustTryDish && (
-                <p className="text-[11px] text-orange-600 mt-1 font-medium">Try: {place.mustTryDish}</p>
+              {isFood && place.mustTryDish && (
+                <p className="text-xs text-orange-300 mt-2 font-medium flex items-center gap-1">
+                  <Sparkle className="w-3.5 h-3.5" /> Must try: {place.mustTryDish}
+                </p>
               )}
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-              <button onClick={() => setEditing(true)} className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors" title="Edit">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-              </button>
-              <button onClick={() => onDelete(place.id)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Bottom bar */}
-          <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-slate-100">
-            <button onClick={() => openInMaps(place, cityName)} className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-blue-600 transition-colors">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-              Maps
-            </button>
-            <span className="text-slate-200">·</span>
-            <button onClick={() => searchReviews(place, cityName)} className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-blue-600 transition-colors">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Reviews
-            </button>
-            <div className="ml-auto">
+            {/* Status pill doubles as a quick picker */}
+            <label className={`relative badge ${statClass} px-2.5 py-1 cursor-pointer flex-shrink-0`}>
+              {place.status}
               <select
                 value={place.status}
                 onChange={e => onUpdate(place.id, { status: e.target.value })}
-                className="text-[11px] text-slate-400 hover:text-slate-700 cursor-pointer outline-none bg-transparent"
-                onClick={e => e.stopPropagation()}
+                className="absolute inset-0 opacity-0 cursor-pointer"
+                aria-label="Change status"
               >
-                <option>Want to Go</option>
-                <option>Confirmed</option>
-                <option>Done</option>
-                <option>Skipped</option>
+                {STATUSES.map(s => <option key={s}>{s}</option>)}
               </select>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-1.5 mt-3">
+            <button onClick={() => openInMaps(place, cityName)} className="flex items-center gap-1.5 text-xs font-medium text-ink-2 hover:text-ink bg-raised hover:bg-line px-2.5 py-1.5 rounded-lg transition-colors">
+              <MapPin className="w-3.5 h-3.5" /> Maps
+            </button>
+            <button onClick={() => searchReviews(place, cityName)} className="flex items-center gap-1.5 text-xs font-medium text-ink-2 hover:text-ink bg-raised hover:bg-line px-2.5 py-1.5 rounded-lg transition-colors">
+              <Globe className="w-3.5 h-3.5" /> Reviews
+            </button>
+            <div className="ml-auto flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+              <button onClick={() => setEditing(true)} className="w-8 h-8 rounded-full flex items-center justify-center text-ink-3 hover:text-ink hover:bg-raised transition-colors" aria-label="Edit place">
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button onClick={() => onDelete(place.id)} className="w-8 h-8 rounded-full flex items-center justify-center text-ink-3 hover:text-red-400 hover:bg-red-500/10 transition-colors" aria-label="Delete place">
+                <Trash className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {editing && (
         <PlaceForm initial={place} cityName={cityName} onSave={handleSave} onClose={() => setEditing(false)} />
