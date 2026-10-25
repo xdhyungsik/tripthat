@@ -209,11 +209,11 @@ export default function TripMap({ cities, places = [], flights = [], onCityClick
       maxBounds={MAX_BOUNDS}
       maxBoundsViscosity={1}
     >
+      {/* OSM standard tiles: free, no key — CARTO basemaps started requiring an API key */}
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        subdomains="abcd"
-        maxZoom={20}
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        maxZoom={19}
       />
 
       {/* City route — two world copies (0 and +360) */}
